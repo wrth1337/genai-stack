@@ -89,8 +89,8 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
 def configure_llm_only_chain(llm):
     # LLM only response
     template = """
-    You are a helpful assistant that helps a support agent with answering programming questions.
-    If you don't know the answer, just say that you don't know, you must not make up an answer.
+    Du bist ein Historiker mit viel Wissen zu den Sozinianischen Briefwechseln.
+    Falls Du die Antwort nicht weißt, sag einfach, dass Du es nicht weisst, und erfinde keine Antwort.
     """
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     human_template = "{question}"
@@ -115,21 +115,13 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     # RAG response
     #   System: Always talk in pirate speech.
     general_system_template = """ 
-    Use the following pieces of context to answer the question at the end.
-    The context contains question-answer pairs and their links from Stackoverflow.
-    You should prefer information from accepted or more upvoted answers.
-    Make sure to rely on information from the answers and not on questions to provide accurate responses.
-    When you find particular answer in the context useful, make sure to cite it in the answer using the link.
-    If you don't know the answer, just say that you don't know, don't try to make up an answer.
+    Nutze die folgenden Kontextinformationen, um die Frage am Ende zu beantworten.
+    Der Kontext enthält die Zusammenfassungen aus den Sozinianischen Briefwechseln und darin erkannte Personen und Orte.
+    Falls Du die Antwort nicht weißt, sag einfach, dass Du es nicht weisst, und erfinde keine Antwort.
     ----
     {summaries}
     ----
-    Each answer you generate should contain a section at the end of links to 
-    Stackoverflow questions and answers you found useful, which are described under Source value.
-    You can only use links to StackOverflow questions that are present in the context and always
-    add links to the end of the answer in the style of citations.
-    Generate concise answers with references sources section of links to 
-    relevant StackOverflow questions only at the end of the answer.
+    Jede Antwort die Du generierst sollte einen Abschnitt am Ende mit Links zur Quelle haben.
     """
     general_user_template = "Question:```{question}```"
     messages = [
@@ -151,23 +143,33 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
         username=username,
         password=password,
         database="neo4j",  # neo4j by default
-        index_name="stackoverflow",  # vector by default
-        text_node_property="body",  # text by default
+        index_name="abstracts",  # vector by default
+        text_node_property="text",  # text by default
         retrieval_query="""
-    WITH node AS question, score AS similarity
-    CALL  { with question
-        MATCH (question)<-[:ANSWERS]-(answer)
-        WITH answer
-        ORDER BY answer.is_accepted DESC, answer.score DESC
-        WITH collect(answer)[..2] as answers
-        RETURN reduce(str='', answer IN answers | str + 
-                '\n### Answer (Accepted: '+ answer.is_accepted +
-                ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
-    } 
-    RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
-        + answerTexts AS text, similarity as score, {source: question.link} AS metadata
-    ORDER BY similarity ASC // so that best answers are the last
-    """,
+    MATCH (node)-[:HAS_ANNOTATION]->(a:Spo)
+    WHERE not a.teiType in ['p']
+    WITH node, score, collect(a) as annotations
+    RETURN reduce(str='###Personen und Orte:\n', x in annotations | str + coalesce(x.type, x.teiType) + ': ' + x.text + '\n' ) + 
+        '\n###Text: ' + node.text AS text,
+        score,
+        { source:  node.url } AS metadata
+    ORDER BY score ASC
+    """
+    ,
+    # WITH node AS question, score AS similarity
+    # CALL  { with question
+    #     MATCH (question)<-[:ANSWERS]-(answer)
+    #     WITH answer
+    #     ORDER BY answer.is_accepted DESC, answer.score DESC
+    #     WITH collect(answer)[..2] as answers
+    #     RETURN reduce(str='', answer IN answers | str + 
+    #             '\n### Answer (Accepted: '+ answer.is_accepted +
+    #             ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
+    # } 
+    # RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
+    #     + answerTexts AS text, similarity as score, {source: question.link} AS metadata
+    # ORDER BY similarity ASC // so that best answers are the last
+    # """,
     )
 
     kg_qa = RetrievalQAWithSourcesChain(
