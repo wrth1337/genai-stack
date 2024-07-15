@@ -41,7 +41,7 @@ services:
 
   database:
     user: "${UID}:${GID}"
-    image: neo4j:5.19
+    image: neo4j:5.21.2
     ports:
       - 7687:7687
       - 7474:7474
