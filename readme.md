@@ -1,3 +1,62 @@
+## Installation
+
+Depending on the type of GPU the installation slightly differs. 
+Technically this is handled by [Docker Compose service profiles](https://docs.docker.com/compose/profiles/#start-specific-profiles).
+
+
+#### Nvidia GPU
+
+Install [Nvidia's container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html). On a Ubuntu/Debian based os run the following commands
+
+```
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update
+sudo nvidia-ctk runtime configure --runtime=docker
+sudo nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
+```
+
+After a full reboot, check that nvidia gpus are detected properly using `nvidia-smi`.
+
+Ensure you have set `export COMPOSE_PROFILES=linux-gpu-nvidia`, e.g. in `~/.profile`.
+
+#### AMD GPU
+
+TBD
+
+Ensure you have set `export COMPOSE_PROFILES=linux-gpu-amd`, e.g. in `~/.profile`.
+
+#### On a Mac computer
+
+In case you're using OLLAMA install it directly on the machine.
+
+
+### Genral installation
+
+Once the GPU dependent part is done, copy `env.example` to `.env` and configure it to your needs.
+It's important to set the uid/gid to the user running the Docker commands.
+
+### seeding the database
+
+To have an inital dataset for neo4j, you can use a dump file.
+```
+mkdir data backups
+# copy the dump file of the given database into the backups folder
+docker run -it --rm -u 236317:236317 -v $PWD/backups:/backups -v $PWD/data:/data neo4j/neo4j-admin:5.21.2 neo4j-admin database load neo4j --overwrite-destination=true --from-path=/backups
+```
+
+## usage
+
+Navigate to [http://<hostname>:8502/](http://<hostname>:8502/) for the loader app which is supposed to create the vector embeddings of your graph data.
+
+The chat bot is available via [http://<hostname>:8501/](http://<hostname>:8501/).
+
+***
+
+Original readme below:
+
 # GenAI Stack
 The GenAI Stack will get you started building your own GenAI application in no time.
 The demo applications can serve as inspiration or as a starting point.
