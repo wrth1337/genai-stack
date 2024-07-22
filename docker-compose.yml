@@ -16,6 +16,12 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    devices:
+      - "/dev/nvidiactl:/dev/nvidiactl"
+      - "/dev/nvidia-uvm:/dev/nvidia-uvm"
+      - "/dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools"
+      - "/dev/nvidia-modeset:/dev/nvidia-modeset"
+      - "/dev/nvidia0:/dev/nvidia0"
             
   llm-gpu-amd:
     <<: *llm
