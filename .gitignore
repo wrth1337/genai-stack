@@ -1,5 +1,6 @@
 .env
 data/
+backups/
 embedding_model/*
 !embedding_model/.ignore
 .DS_Store
