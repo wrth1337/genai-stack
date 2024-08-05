@@ -1,3 +1,5 @@
+import os
+
 class BaseLogger:
     def __init__(self) -> None:
         self.info = print
@@ -27,18 +29,17 @@ def extract_title_and_question(input_string):
 
 
 def create_vector_index(driver, dimension: int) -> None:
-
-    index_query = "CALL db.index.vector.createNodeIndex('abstracts', 'Abstract', 'embedding', $dimension, 'cosine')"
     try:
-        driver.query(index_query, {"dimension": dimension})
+        driver.query("CALL db.index.vector.createNodeIndex($index_name, $label, $property_embedding, $dimension, 'cosine')",
+            {
+                "dimension": dimension,
+                "index_name": f"{os.environ['LABEL'].lower()}_index",
+                "label": os.environ["LABEL"],
+                "property_embedding": os.environ["PROPERTY_EMBEDDING"]
+            }
+        )
     except:  # Already exists
         pass
-    # index_query = "CALL db.index.vector.createNodeIndex('top_answers', 'Answer', 'embedding', $dimension, 'cosine')"
-    # try:
-    #     driver.query(index_query, {"dimension": dimension})
-    # except:  # Already exists
-    #     pass
-
 
 def create_constraints(driver):
     # driver.query(
@@ -53,4 +54,4 @@ def create_constraints(driver):
     # driver.query(
     #     "CREATE CONSTRAINT tag_name IF NOT EXISTS FOR (t:Tag) REQUIRE (t.name) IS UNIQUE"
     # )
-    pass
+    pass    

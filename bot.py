@@ -22,6 +22,7 @@ url = os.getenv("NEO4J_URI")
 database = os.getenv("NEO4J_DATABASE")
 username = os.getenv("NEO4J_USERNAME")
 password = os.getenv("NEO4J_PASSWORD")
+database = os.getenv("NEO4J_DATABASE")
 ollama_base_url = os.getenv("OLLAMA_BASE_URL")
 embedding_model_name = os.getenv("EMBEDDING_MODEL")
 llm_name = os.getenv("LLM")
@@ -53,8 +54,7 @@ llm = load_llm(llm_name, logger=logger, config={"ollama_base_url": ollama_base_u
 
 llm_chain = configure_llm_only_chain(llm)
 rag_chain = configure_qa_rag_chain(
-    llm, embeddings, embeddings_store_url=url, username=username, password=password
-)
+    llm, embeddings, embeddings_store_url=url, username=username, password=password, database=database)
 
 # Streamlit UI
 styl = f"""

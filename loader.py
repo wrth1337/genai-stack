@@ -11,7 +11,6 @@ from PIL import Image
 load_dotenv(".env")
 
 url = os.getenv("NEO4J_URI")
-database = os.getenv("NEO4J_DATABASE")
 username = os.getenv("NEO4J_USERNAME")
 password = os.getenv("NEO4J_PASSWORD")
 database = os.getenv("NEO4J_DATABASE")

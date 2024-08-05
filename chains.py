@@ -21,6 +21,8 @@ from langchain.prompts import (
     SystemMessagePromptTemplate
 )
 
+import os 
+
 from typing import List, Any
 from utils import BaseLogger, extract_title_and_question
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -111,7 +113,7 @@ def configure_llm_only_chain(llm):
     return generate_llm_output
 
 
-def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password):
+def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password, database):
     # RAG response
     #   System: Always talk in pirate speech.
     general_system_template = """ 
@@ -121,9 +123,9 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     ----
     {summaries}
     ----
-    Jede Antwort die Du generierst sollte einen Abschnitt am Ende mit Links zur Quelle haben.
+    Jede Antwort die Du generierst, sollte einen Abschnitt am Ende mit Links zur Quelle haben.
     """
-    general_user_template = "Question:```{question}```"
+    general_user_template = "Frage:```{question}```"
     messages = [
         SystemMessagePromptTemplate.from_template(general_system_template),
         HumanMessagePromptTemplate.from_template(general_user_template),
@@ -142,34 +144,10 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
         url=embeddings_store_url,
         username=username,
         password=password,
-        database="neo4j",  # neo4j by default
-        index_name="abstracts",  # vector by default
-        text_node_property="text",  # text by default
-        retrieval_query="""
-    MATCH (node)-[:HAS_ANNOTATION]->(a:Spo)
-    WHERE not a.teiType in ['p']
-    WITH node, score, collect(a) as annotations
-    RETURN reduce(str='###Personen und Orte:\n', x in annotations | str + coalesce(x.type, x.teiType) + ': ' + x.text + '\n' ) + 
-        '\n###Text: ' + node.text AS text,
-        score,
-        { source:  node.url } AS metadata
-    ORDER BY score ASC
-    """
-    ,
-    # WITH node AS question, score AS similarity
-    # CALL  { with question
-    #     MATCH (question)<-[:ANSWERS]-(answer)
-    #     WITH answer
-    #     ORDER BY answer.is_accepted DESC, answer.score DESC
-    #     WITH collect(answer)[..2] as answers
-    #     RETURN reduce(str='', answer IN answers | str + 
-    #             '\n### Answer (Accepted: '+ answer.is_accepted +
-    #             ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
-    # } 
-    # RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
-    #     + answerTexts AS text, similarity as score, {source: question.link} AS metadata
-    # ORDER BY similarity ASC // so that best answers are the last
-    # """,
+        database=database,
+        index_name=f"{os.environ['LABEL'].lower()}_index",
+        text_node_property=os.environ["PROPERTY_TEXT"],
+        retrieval_query=os.environ['RETRIEVAL_QUERY']
     )
 
     kg_qa = RetrievalQAWithSourcesChain(
