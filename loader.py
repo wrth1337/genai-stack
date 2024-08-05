@@ -11,8 +11,10 @@ from PIL import Image
 load_dotenv(".env")
 
 url = os.getenv("NEO4J_URI")
+database = os.getenv("NEO4J_DATABASE")
 username = os.getenv("NEO4J_USERNAME")
 password = os.getenv("NEO4J_PASSWORD")
+database = os.getenv("NEO4J_DATABASE")
 ollama_base_url = os.getenv("OLLAMA_BASE_URL")
 embedding_model_name = os.getenv("EMBEDDING_MODEL")
 # Remapping for Langchain Neo4j integration
@@ -24,24 +26,29 @@ embeddings, dimension = load_embedding_model(
     embedding_model_name, config={"ollama_base_url": ollama_base_url}, logger=logger
 )
 
-neo4j_graph = Neo4jGraph(url=url, username=username, password=password)
+neo4j_graph = Neo4jGraph(url=url, database=database, username=username, password=password)
 
 create_constraints(neo4j_graph)
 create_vector_index(neo4j_graph, dimension)
 
 def calculate_embeddings():
-    neo4j_graph.query("match (t:Text{type:'abstract'}) set t:Abstract")
 
-    result = neo4j_graph.query("MATCH (n:Abstract) RETURN n.guid AS guid , n.text AS text")
+    preparation_query = os.getenv("PREPARATION_QUERY")
+    if preparation_query is not None:
+        neo4j_graph.query(preparation_query)
+
+    q = f"MATCH (n:{os.environ['LABEL']}) RETURN n.{os.environ['PROPERTY_IDENTIFIER']} AS guid , n.{os.environ['PROPERTY_TEXT']} AS text"
+    logger.info("query to run: " + q)
+    result = neo4j_graph.query(f"MATCH (n:{os.environ['LABEL']}) RETURN n.{os.environ['PROPERTY_IDENTIFIER']} AS guid , n.{os.environ['PROPERTY_TEXT']} AS text")
     logger.info(result)
     result = list(map(lambda x: {"guid": x["guid"], "text": embeddings.embed_query(x["text"])}, result))
 
     logger.info(result)
 
-    import_query = """
+    import_query = f"""
     UNWIND $data AS x
-    MATCH (a:Abstract {guid: x.guid}) 
-    SET a.embedding = x.text
+    MATCH (a:{os.environ['LABEL']} {{{os.environ['PROPERTY_IDENTIFIER']}: x.guid}}) 
+    SET a.{os.environ['PROPERTY_EMBEDDING']} = x.text
     """
     neo4j_graph.query(import_query, {"data": result})
 
