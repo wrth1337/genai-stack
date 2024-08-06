@@ -7,6 +7,7 @@ from streamlit.logger import get_logger
 from chains import load_embedding_model
 from utils import create_constraints, create_vector_index
 from PIL import Image
+from stqdm import stqdm
 
 load_dotenv(".env")
 
@@ -36,21 +37,25 @@ def calculate_embeddings():
     if preparation_query is not None:
         neo4j_graph.query(preparation_query)
 
-    q = f"MATCH (n:{os.environ['LABEL']}) RETURN n.{os.environ['PROPERTY_IDENTIFIER']} AS guid , n.{os.environ['PROPERTY_TEXT']} AS text"
+    q = f"MATCH (n:{os.environ['LABEL']}) RETURN n.{os.environ['PROPERTY_IDENTIFIER']} AS guid, n.{os.environ['PROPERTY_TEXT']} AS text"
     logger.info("query to run: " + q)
-    result = neo4j_graph.query(f"MATCH (n:{os.environ['LABEL']}) RETURN n.{os.environ['PROPERTY_IDENTIFIER']} AS guid , n.{os.environ['PROPERTY_TEXT']} AS text")
-    logger.info(result)
-    result = list(map(lambda x: {"guid": x["guid"], "text": embeddings.embed_query(x["text"])}, result))
+    result = neo4j_graph.query(q)
+    logger.info("before embeddings")
 
-    logger.info(result)
+    result = [ {"guid": x["guid"], "text": embeddings.embed_query(x["text"])} for x in stqdm(result) ] 
+    logger.info(f"after embeddings {len(result)}")
 
+    logger.info("before applying to db")
     import_query = f"""
     UNWIND $data AS x
-    MATCH (a:{os.environ['LABEL']} {{{os.environ['PROPERTY_IDENTIFIER']}: x.guid}}) 
-    SET a.{os.environ['PROPERTY_EMBEDDING']} = x.text
+    CALL {{
+        WITH x
+        MATCH (a:{os.environ['LABEL']} {{{os.environ['PROPERTY_IDENTIFIER']}: x.guid}}) 
+        SET a.{os.environ['PROPERTY_EMBEDDING']} = x.text
+    }} IN TRANSACTIONS OF 1000 ROWS
     """
     neo4j_graph.query(import_query, {"data": result})
-
+    logger.info("after applying to db")
 
 # Streamlit
 # def get_tag() -> str:
@@ -75,14 +80,14 @@ def calculate_embeddings():
 def render_page():
     datamodel_image = Image.open("./images/datamodel.png")
     st.header("Create Embeddings")
-    st.subheader("For all nodes with label Abstract an embedding will be created")
+    st.subheader(f"For all nodes with label {os.environ['LABEL']} an embedding will be created")
     st.caption("Go to http://localhost:7474/ to explore the graph.")
 
     # user_input = get_tag()
     # num_pages, start_page = get_pages()
 
     if st.button("Run", type="primary"):
-        with st.spinner("Loading... This might take a minute or two."):
+        with st.spinner("Loading... This might take some time."):
             try:
                 calculate_embeddings()
                 st.success("Import successful", icon="✅")
