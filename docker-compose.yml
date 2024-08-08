@@ -58,7 +58,7 @@ services:
       - NEO4J_PLUGINS=["apoc"]
       - NEO4J_db_tx__log_rotation_retention__policy=false
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=${NEO4J_LICENSE-eval}
     healthcheck:
         test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
         interval: 15s
@@ -75,7 +75,7 @@ services:
       - $PWD/backups:/backups
       - $PWD/seed-databases.sh:/seed-databases.sh
     environment:
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=${NEO4J_LICENSE-eval}
       - NEO4J_ADDRESS=neo4j://database
       - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
