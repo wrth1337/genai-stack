@@ -28,8 +28,6 @@ services:
     depends_on:
       database:
         condition: service_healthy
-      pull-model:
-        condition: service_completed_successfully
       database-seeding:
         condition: service_completed_successfully
     develop:
@@ -57,8 +55,6 @@ services:
     depends_on:
       database:
         condition: service_healthy
-      pull-model:
-        condition: service_completed_successfully
       database-seeding:
         condition: service_completed_successfully
     develop:

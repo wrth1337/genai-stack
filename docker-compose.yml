@@ -7,11 +7,16 @@ services:
       - net
     volumes:
       - $PWD/ollama:/root/.ollama
+    entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
+    environment:
+      - LLM=${LLM-llama3.1}
 
 
   llm-gpu-nvidia:
     <<: *llm
     profiles: ["linux-gpu-nvidia"]
+    environment:
+      - LLM=${LLM-llama3.1}
     deploy:
       resources:
         reservations:
@@ -27,6 +32,7 @@ services:
       - "/dev/nvidia0:/dev/nvidia0"
     volumes:
       - $PWD/ollama:/root/.ollama
+      - $PWD/ollama_entrypoint.sh:/entrypoint.sh
             
   llm-gpu-amd:
     <<: *llm
@@ -34,23 +40,25 @@ services:
     image: ollama/ollama:rocm
     environment:
       - HSA_OVERRIDE_GFX_VERSION=11.0.2
+      - LLM=${LLM-llama3.1}
     devices:
       - "/dev/kfd:/dev/kfd"
       - "/dev/dri:/dev/dri"
     volumes:
       - $PWD/ollama:/root/.ollama
+      - $PWD/ollama_entrypoint.sh:/entrypoint.sh
 
-  pull-model:
-    image: genai-stack/pull-model:latest
-    build:
-      context: .
-      dockerfile: pull_model.Dockerfile
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-      - LLM=${LLM-llama2}
-    networks:
-      - net
-    tty: true
+  # pull-model:
+  #   image: genai-stack/pull-model:latest
+  #   build:
+  #     context: .
+  #     dockerfile: pull_model.Dockerfile
+  #   environment:
+  #     - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
+  #     - LLM=${LLM-llama3.1}
+  #   networks:
+  #     - net
+  #   tty: true
 
   database:
     user: "${UID}:${GID}"
