@@ -10,7 +10,7 @@ services:
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     environment:
       - LLM=${LLM-llama3.1}
-
+    tty: true
 
   llm-gpu-nvidia:
     <<: *llm
