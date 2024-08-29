@@ -28,7 +28,7 @@ services:
           COLLECT { MATCH (node)-[:PLACE_OF_ISSUE]->(p:Place) RETURN apoc.text.join([x IN [p.latLong, p.normalizedGerman, p.wikidataId] WHERE x IS NOT NULL], ' ') } AS places 
         RETURN '### Orte:\n' + apoc.text.join(places, '\n') +'### Referenzen:\n' + apoc.text.join(refs, '\n') + '\n###Text: ' + node.concatText AS text,
             score,
-            { source:  node.url } AS metadata  
+            { source:  coalesce(node.url, 'n/a') } AS metadata  
         ORDER BY score ASC
 
     ports:
