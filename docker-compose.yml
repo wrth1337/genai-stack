@@ -41,6 +41,7 @@ services:
     environment:
       - HSA_OVERRIDE_GFX_VERSION=11.0.2
       - LLM=${LLM-llama3.1}
+      - OLLAMA_DEBUG=1
     devices:
       - "/dev/kfd:/dev/kfd"
       - "/dev/dri:/dev/dri"

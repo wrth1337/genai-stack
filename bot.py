@@ -4,6 +4,8 @@ import streamlit as st
 from streamlit.logger import get_logger
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain_community.graphs import Neo4jGraph
+from langchain.globals import set_verbose
+
 from dotenv import load_dotenv
 from utils import (
     create_vector_index,
@@ -17,6 +19,7 @@ from chains import (
 )
 
 load_dotenv(".env")
+set_verbose(True)
 
 url = os.getenv("NEO4J_URI")
 database = os.getenv("NEO4J_DATABASE")
@@ -76,6 +79,7 @@ styl = f"""
     }}
 </style>
 """
+st.header(f"🤖 Chat with your {os.getenv('NEO4J_DATABASE')} graph")
 st.markdown(styl, unsafe_allow_html=True)
 
 
