@@ -17,13 +17,15 @@ services:
       PROPERTY_TEXT: text
       PROPERTY_EMBEDDING: embedding
       RETRIEVAL_QUERY: |
+        MATCH (node)<-[:HAS_TEXT]-(m:Metadata)
+        WITH node, score, 'https://sozinianer.mni.thm.de/view/' + m.guid AS url
         MATCH (node)-[:HAS_ANNOTATION]->(a:Spo)
         WHERE not a.teiType in ['p']
-        WITH node, score, collect(a) as annotations
+        WITH node, score, collect(a) as annotations, url
         RETURN reduce(str='###Personen und Orte:\n', x in annotations | str + coalesce(x.type, x.teiType) + ': ' + x.text + '\n' ) + 
             '\n###Text: ' + node.text AS text,
             score,
-            { source:  node.url } AS metadata
+            { source: url } AS metadata
         ORDER BY score ASC
 
     ports:
