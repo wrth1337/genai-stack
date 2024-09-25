@@ -25,8 +25,6 @@ Ensure you have set `export COMPOSE_PROFILES=linux-gpu-nvidia`, e.g. in `~/.prof
 
 #### AMD GPU
 
-TBD
-
 Ensure you have set `export COMPOSE_PROFILES=linux-gpu-amd`, e.g. in `~/.profile`.
 
 #### On a Mac computer
@@ -50,9 +48,21 @@ docker run -it --rm -u 236317:236317 -v $PWD/backups:/backups -v $PWD/data:/data
 
 ## usage
 
-Navigate to [http://<hostname>:8502/](http://<hostname>:8502/) for the loader app which is supposed to create the vector embeddings of your graph data.
+The project contains multiple databases (regestaimperii and sozinianer for now). 
+Each of those databases has multiple containers. 
+See below a list of all endpoint ports.
 
-The chat bot is available via [http://<hostname>:8501/](http://<hostname>:8501/).
+The `bot` container is a interactive chat bot application using streamlit.
+`loader` is a container to vectorize the graph data.
+This is intended to be a one-shot operation.
+The `api` container exposes the search as a REST interface. 
+A swagger UI for API documentation is available as well.
+
+|  | sozinianer | regestaimperii |
+| --- | --- | --- |
+| bot | http://localhost:8501 | http://localhost:8601 |
+| loader | http://localhost:8502 | http://localhost:8602 |
+| api | http://localhost:8504/docs | http://localhost:8604/docs |
 
 ***
 
