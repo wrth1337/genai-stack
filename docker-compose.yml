@@ -49,6 +49,7 @@ services:
       - $PWD/ollama:/root/.ollama
       - $PWD/ollama_entrypoint.sh:/entrypoint.sh
 
+  # pull-model container is superseeded by ollama-entrypoint.sh script
   # pull-model:
   #   image: genai-stack/pull-model:latest
   #   build:
