@@ -21,6 +21,7 @@ services:
       PROPERTY_IDENTIFIER: uid
       PROPERTY_TEXT: concatText
       PROPERTY_EMBEDDING: embedding
+      PROMPT_CONTEXT: den Regesta Imperii
       RETRIEVAL_QUERY: |
         MATCH (node)
         WITH node, score, 

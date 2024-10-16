@@ -16,6 +16,7 @@ services:
       PROPERTY_IDENTIFIER: guid
       PROPERTY_TEXT: text
       PROPERTY_EMBEDDING: embedding
+      PROMPT_CONTEXT: den Sozinianischen Briefwechseln
       RETRIEVAL_QUERY: |
         MATCH (node)<-[:HAS_TEXT]-(m:Metadata)
         WITH node, score, 'https://sozinianer.mni.thm.de/view/' + m.guid AS url

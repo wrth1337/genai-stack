@@ -116,12 +116,12 @@ def configure_llm_only_chain(llm):
 def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password, database):
     # RAG response
     #   System: Always talk in pirate speech.
-    general_system_template = """ 
+    general_system_template = f""" 
     Nutze die folgenden Kontextinformationen, um die Frage am Ende zu beantworten.
-    Der Kontext enthält die Zusammenfassungen aus den Sozinianischen Briefwechseln und darin erkannte Personen und Orte.
+    Der Kontext enthält die Zusammenfassungen aus {os.environ['PROMPT_CONTEXT']} und darin erkannte Personen und Orte.
     Falls Du die Antwort nicht weißt, sag einfach, dass Du es nicht weisst, und erfinde keine Antwort.
     ----
-    {summaries}
+    {{summaries}}
     ----
     Jede Antwort die Du generierst, sollte einen Abschnitt am Ende mit Links zur Quelle haben.
     """
