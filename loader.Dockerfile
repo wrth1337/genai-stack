@@ -15,6 +15,7 @@ RUN pip install --upgrade -r requirements.txt
 COPY loader.py .
 COPY utils.py .
 COPY chains.py .
+COPY .auth.yaml .
 COPY images ./images
 
 EXPOSE 8502

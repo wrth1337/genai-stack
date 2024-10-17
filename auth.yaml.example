@@ -1,0 +1,11 @@
+# see https://github.com/mkhorasani/Streamlit-Authenticator for more information
+cookie:
+  expiry_days: 30
+  key: some_signature_key # Must be a string
+  name: streamlit_auth
+credentials:
+  usernames:
+    genai:
+      password: 123 # Will be hashed automatically
+      name: Genai Stack User
+      email: n/a

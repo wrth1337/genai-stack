@@ -8,6 +8,9 @@ from chains import load_embedding_model
 from utils import create_constraints, create_vector_index
 from PIL import Image
 from stqdm import stqdm
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
 load_dotenv(".env")
 
@@ -78,32 +81,59 @@ def calculate_embeddings():
 
 
 def render_page():
-    datamodel_image = Image.open("./images/datamodel.png")
-    st.header("Create Embeddings")
-    st.subheader(f"For all nodes with label {os.environ['LABEL']} an embedding will be created")
-    st.caption("Go to http://localhost:7474/ to explore the graph.")
 
-    # user_input = get_tag()
-    # num_pages, start_page = get_pages()
+    with open('.auth.yaml') as file:
+        config = yaml.load(file, Loader=SafeLoader)
 
-    if st.button("Run", type="primary"):
-        with st.spinner("Loading... This might take some time."):
-            try:
-                calculate_embeddings()
-                st.success("Import successful", icon="✅")
-                st.caption("Data model")
-                st.image(datamodel_image)
-                st.caption("Go to http://localhost:7474/ to interact with the database")
-            except Exception as e:
-                st.error(f"Error: {e}", icon="🚨")
-    # with st.expander("Highly ranked questions rather than tags?"):
-    #     if st.button("Import highly ranked questions"):
-    #         with st.spinner("Loading... This might take a minute or two."):
-    #             try:
-    #                 load_high_score_so_data()
-    #                 st.success("Import successful", icon="✅")
-    #             except Exception as e:
-    #                 st.error(f"Error: {e}", icon="🚨")
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days']
+    )
+
+    try:
+        authenticator.login()
+    except stauth.utilities.exceptions.LoginError as e:
+        st.error(e)
+
+    if st.session_state['authentication_status']:
+        authenticator.logout()
+        st.write(f'Welcome *{st.session_state["name"]}*')
+        
+        datamodel_image = Image.open("./images/datamodel.png")
+        st.header("Create Embeddings")
+        st.subheader(f"For all nodes with label {os.environ['LABEL']} an embedding will be created")
+        st.caption("Go to http://localhost:7474/ to explore the graph.")
+
+        # user_input = get_tag()
+        # num_pages, start_page = get_pages()
+
+        if st.button("Run", type="primary"):
+            with st.spinner("Loading... This might take some time."):
+                try:
+                    calculate_embeddings()
+                    st.success("Import successful", icon="✅")
+                    st.caption("Data model")
+                    st.image(datamodel_image)
+                    st.caption("Go to http://localhost:7474/ to interact with the database")
+                except Exception as e:
+                    st.error(f"Error: {e}", icon="🚨")
+        # with st.expander("Highly ranked questions rather than tags?"):
+        #     if st.button("Import highly ranked questions"):
+        #         with st.spinner("Loading... This might take a minute or two."):
+        #             try:
+        #                 load_high_score_so_data()
+        #                 st.success("Import successful", icon="✅")
+        #             except Exception as e:
+        #                 st.error(f"Error: {e}", icon="🚨")
 
 
+    elif st.session_state['authentication_status'] is False:
+        st.error('Username/password is incorrect')
+    elif st.session_state['authentication_status'] is None:
+        st.warning('Please enter your username and password')
+
+
+   
 render_page()

@@ -4,6 +4,7 @@ wikipedia
 tiktoken
 neo4j
 streamlit
+streamlit-authenticator
 sentence_transformers==2.2.2
 Pillow
 fastapi
