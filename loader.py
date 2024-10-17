@@ -82,7 +82,7 @@ def calculate_embeddings():
 
 def render_page():
 
-    with open('.auth.yaml') as file:
+    with open('auth.yaml') as file:
         config = yaml.load(file, Loader=SafeLoader)
 
     authenticator = stauth.Authenticate(

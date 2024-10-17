@@ -66,7 +66,7 @@ A swagger UI for API documentation is available as well.
 
 Copy `env.example` to `.env` and apply your configuration.
 
-For authentication copy `auth.yaml.example` to `.auth.yml` and apply your changes.
+For authentication copy `auth.yaml.example` to `auth.yml` and apply your changes.
 
 ***
 
