@@ -1,12 +1,11 @@
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.embeddings import BedrockEmbeddings
-from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain_openai.embeddings.base import OpenAIEmbeddings
+from langchain_aws.embeddings.bedrock import BedrockEmbeddings
+from langchain_huggingface.embeddings.huggingface import HuggingFaceEmbeddings
 
 from langchain_openai import ChatOpenAI
-from langchain_community.chat_models import ChatOllama
-from langchain_community.chat_models import BedrockChat
+from langchain_ollama.chat_models import ChatOllama
+from langchain_aws.chat_models.bedrock import ChatBedrock
 
 from langchain_community.graphs import Neo4jGraph
 
@@ -29,13 +28,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
-    if embedding_model_name == "ollama":
-        embeddings = OllamaEmbeddings(
-            base_url=config["ollama_base_url"], model="llama2"
-        )
-        dimension = 4096
-        logger.info("Embedding: Using Ollama")
-    elif embedding_model_name == "openai":
+    if embedding_model_name == "openai":
         embeddings = OpenAIEmbeddings()
         dimension = 1536
         logger.info("Embedding: Using OpenAI")
@@ -50,11 +43,14 @@ def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config=
         dimension = 768
         logger.info("Embedding: Using Google Generative AI Embeddings")
     else:
-        embeddings = SentenceTransformerEmbeddings(
-            model_name="all-MiniLM-L6-v2", cache_folder="/embedding_model"
+        embeddings = HuggingFaceEmbeddings(
+            model_name=embedding_model_name, cache_folder="/embedding_model"
+            #model_name="all-MiniLM-L6-v2", cache_folder="/embedding_model"
         )
-        dimension = 384
-        logger.info("Embedding: Using SentenceTransformer")
+        dimension = len(embeddings.embed_query("test"))
+        #dimension = 384  # TODO: 384 seems to be correct for all-MINIlm-l6-V2, 
+    
+        logger.info("Embedding: Using HuggingFaceEmbeddings with model %s, dim %d", embedding_model_name, dimension)
     return embeddings, dimension
 
 
@@ -67,7 +63,7 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
         return ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", streaming=True)
     elif llm_name == "claudev2":
         logger.info("LLM: ClaudeV2")
-        return BedrockChat(
+        return ChatBedrock(
             model_id="anthropic.claude-v2",
             model_kwargs={"temperature": 0.0, "max_tokens_to_sample": 1024},
             streaming=True,

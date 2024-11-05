@@ -1,21 +1,24 @@
-openai
+#openai
 python-dotenv
-wikipedia
-tiktoken
+#wikipedia
+#tiktoken
 neo4j
 streamlit
 streamlit-authenticator
-sentence_transformers==2.2.2
-Pillow
-fastapi
-PyPDF2
-torch==2.2.0
-pydantic
+sentence_transformers
+#Pillow
+#fastapi
+#PyPDF2
+#torch==2.2.0
+#pydantic
 uvicorn
-sse-starlette
-boto3
+# sse-starlette
+# boto3
 # missing from the langchain base image?
+langchain-ollama
 langchain-openai
 langchain-community
+langchain-aws
 langchain-google-genai
+langchain-huggingface
 stqdm
