@@ -1,7 +1,0 @@
-*
-!*.py
-!auth.yaml
-!requirements.txt
-!images/*
-!front-end/*
-front-end/node_modules/*

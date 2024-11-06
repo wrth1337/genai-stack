@@ -1,28 +1,29 @@
 services:
 
-  loader:
+  loader: &loader_definition
     build:
-      context: .
-      dockerfile: loader.Dockerfile
+      context: ./build-context/
+      dockerfile: Dockerfile
     volumes:
     - $PWD/embedding_model:/embedding_model
-    environment: &template_env
-    - NEO4J_URI=${NEO4J_URI-neo4j://database:7687}
-    - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
-    - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
-    - NEO4J_DATABASE=${NEO4J_DATABASE-neo4j}
-    - OPENAI_API_KEY=${OPENAI_API_KEY-}
-    - GOOGLE_API_KEY=${GOOGLE_API_KEY-}
-    - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-    - LLM=${LLM-llama2}
-    - EMBEDDING_MODEL=${EMBEDDING_MODEL-sentence_transformer}
-    - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
-    - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2-false}
-    - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT-}
-    - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY-}
-    - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID-}
-    - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
-    - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION-}
+    environment: &environment
+      NEO4J_URI: ${NEO4J_URI-neo4j://database:7687}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD-password}
+      NEO4J_USERNAME: ${NEO4J_USERNAME-neo4j}
+      NEO4J_DATABASE: ${NEO4J_DATABASE-neo4j}
+      OPENAI_API_KEY: ${OPENAI_API_KEY-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL-http://host.docker.internal:11434}
+      LLM: ${LLM-llama2}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL-sentence_transformer}
+      LANGCHAIN_ENDPOINT: ${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2-false}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT-}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION-}
+      STREAMLIT_FILE: loader.py
     networks:
     - net
     depends_on:
@@ -35,104 +36,20 @@ services:
       - action: rebuild
         path: .
         ignore:
-        - bot.py
         - pdf_bot.py
-        - api.py
         - front-end/
-        # ports:
-        # - 8081:8080
-        # - 8502:8502
 
   bot:
-    build:
-      context: .
-      dockerfile: bot.Dockerfile
-    volumes:
-    - $PWD/embedding_model:/embedding_model
-    environment: *template_env
-    networks:
-    - net
-    depends_on:
-      database:
-        condition: service_healthy
-      database-seeding:
-        condition: service_completed_successfully
-    develop:
-      watch:
-      - action: rebuild
-        path: .
-        ignore:
-        - loader.py
-        - pdf_bot.py
-        - api.py
-        - front-end/
-        # ports:
-        # - 8501:8501
-
-  # pdf_bot:
-  #   build:
-  #     context: .
-  #     dockerfile: pdf_bot.Dockerfile
-  #   environment:
-  #     - NEO4J_URI=${NEO4J_URI-neo4j://database:7687}
-  #     - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
-  #     - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY-}
-  #     - GOOGLE_API_KEY=${GOOGLE_API_KEY-}
-  #     - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-  #     - LLM=${LLM-llama2}
-  #     - EMBEDDING_MODEL=${EMBEDDING_MODEL-sentence_transformer}
-  #     - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
-  #     - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2-false}
-  #     - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}
-  #     - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-  #     - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-  #     - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-  #     - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-  #   networks:
-  #     - net
-  #   depends_on:
-  #     database:
-  #       condition: service_healthy
-  #     pull-model:
-  #       condition: service_completed_successfully
-  #   x-develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: .
-  #         ignore:
-  #           - loader.py
-  #           - bot.py
-  #           - api.py
-  #           - front-end/
-  #   ports:
-  #     - 8503:8503
+    <<: *loader_definition
+    environment: 
+      <<: *environment
+      STREAMLIT_FILE: bot.py
 
   api:
-    build:
-      context: .
-      dockerfile: api.Dockerfile
-    volumes:
-    - $PWD/embedding_model:/embedding_model
-    environment: *template_env
-    networks:
-    - net
-    depends_on:
-      database:
-        condition: service_healthy
-      database-seeding:
-        condition: service_completed_successfully
-    x-develop:
-      watch:
-      - action: rebuild
-        path: .
-        ignore:
-        - loader.py
-        - bot.py
-        - pdf_bot.py
-        - front-end/
+    <<: *loader_definition
+    entrypoint:  [ "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080" ]
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 http://localhost:8504/ || exit 1"]
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080"]
       interval: 5s
       timeout: 3s
       retries: 5

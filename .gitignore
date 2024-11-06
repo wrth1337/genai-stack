@@ -5,3 +5,4 @@ embedding_model/*
 !embedding_model/.ignore
 .DS_Store
 ollama/
+auth.yml
