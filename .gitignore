@@ -1,6 +1,7 @@
 .*
-data/
-backups/
+data/**
+!data/.ignore
+backups/*.dump
 embedding_model/*
 !embedding_model/.ignore
 .DS_Store
