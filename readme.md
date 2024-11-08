@@ -38,7 +38,7 @@ Ensure you have set `export COMPOSE_PROFILES=linux-gpu-amd`, e.g. in `~/.profile
 In case you're using OLLAMA install it directly on the machine.
 (Details to be followed)
 
-### Genral installation
+### General installation
 
 Once the GPU dependent part is done, copy `env.example` to `.env` and configure it to your needs.
 It's important to set the uid/gid to the user running the Docker commands.
