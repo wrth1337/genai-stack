@@ -31,37 +31,39 @@ Ensure you have set `export COMPOSE_PROFILES=linux-gpu-nvidia`, e.g. in `~/.prof
 
 #### AMD GPU
 
-Ensure you have set `export COMPOSE_PROFILES=linux-gpu-amd`, e.g. in `~/.profile`.
+Ensure you have set `export COMPOSE_PROFILES=linux-gpu-amd`, e.g. in `~/.profile`. 
+Depending on your GPU you might need to tweak `HSA_OVERRIDE_GFX_VERSION`.
 
 #### On a Mac computer
 
 In case you're using OLLAMA install it directly on the machine.
 (Details to be followed)
 
-### General installation
+### configuration files
 
 Once the GPU dependent part is done, copy `env.example` to `.env` and configure it to your needs.
 It's important to set the uid/gid to the user running the Docker commands.
 The first two settings `LLM` and `EMBEDDING_MODEL` should be set according to your needs.
-
-For authentication of the `loader` container copy `auth.yaml.example` to `auth.yml` and apply your changes - esp. change the password.
-
-### database setup
-
-Use the commented out `NEO4J_xxx` variables in your `.env` file to configure the database setting. 
-Note that the password is only set if the `data` folder is empty. 
-You cannot change the database password by simply updating in `.env`.
+`NEO4J_PASSWORD` should be set to a reasonable password.
+Note that the password is only applied if the `data` folder is empty.
+You cannot change the database password by simply changing it in `.env`.
 Instead follow the procedure from [Recover admin user and password](https://neo4j.com/docs/operations-manual/current/authentication-authorization/password-and-user-recovery/).
 
-In contrast to the original GenAI stack we do use a neo4j enterprise version. 
-Depending on your license status do set `NEO4J_LICENSE=yes|eval` in `.env`.
+For authentication of the `loader` container copy `build-context/auth.yaml.example` to `build-context/auth.yml` and apply your changes - esp. change the password.
+
+### download database dump
+
+The database dump for regesta imperii is not part of the github repository, therefore download it:
+
+```bash
+cd backups
+./download.sh
+```
 
 ### seeding the database
 
 To have an inital dataset for neo4j, you can use a dump files.
-Place one or multiple dump files using the same version of Neo4j as referred to in [](docker-compose.yml) into the `/backup` folder.
-Once the DBMS itself is started another docker container `database_seeding` is run which executes [seed-databases.sh](seed-databases.sh)].
-The name of the database to be seeded is inferred from the dump file name, e.g. `sozinianer.dump` creates a database with name `sozinianer`.
+Since we're using the community edition of Neo4j the database name is fixed to `neo4j`.
 
 > [!WARNING]
 > Be aware that seeding will not happen if the respective database already exists.
@@ -73,26 +75,20 @@ With the usual suspect `docker compose ps` and `docker compose logs` progress ca
 
 ## usage
 
-The project contains multiple databases (regestaimperii and sozinianer for now).
-Each of those databases has multiple containers.
-See below a list of all endpoint ports.
-
 The `bot` container is a interactive chat bot application using streamlit.
 `loader` is a container to vectorize the graph data.
 This is intended to be a one-shot operation.
 The `api` container exposes the search as a REST interface.
 A swagger UI for API documentation is available as well.
 
-|  | sozinianer | regestaimperii |
-| --- | --- | --- |
-| bot | http://localhost:8501 | http://localhost:8601 |
-| loader | http://localhost:8502 | http://localhost:8602 |
-| api | http://localhost:8504/docs | http://localhost:8604/docs |
-
+|  | regestaimperii |
+| --- | --- |
+| bot | http://localhost:8601 |
+| loader | http://localhost:8602 |
+| api | http://localhost:8604/docs |
 
 > [!NOTE]
 > The `loader` container is password protected, the password is located in your `auth.yml` file.
-
 
 ***
 
