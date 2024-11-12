@@ -49,22 +49,9 @@ services:
       - $PWD/ollama:/root/.ollama
       - $PWD/ollama_entrypoint.sh:/entrypoint.sh
 
-  # pull-model container is superseeded by ollama-entrypoint.sh script
-  # pull-model:
-  #   image: genai-stack/pull-model:latest
-  #   build:
-  #     context: .
-  #     dockerfile: pull_model.Dockerfile
-  #   environment:
-  #     - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-  #     - LLM=${LLM-llama3.1}
-  #   networks:
-  #     - net
-  #   tty: true
-
   database:
     user: "${UID}:${GID}"
-    image: neo4j:${NEO4J_VERSION-5.22.0}-enterprise
+    image: neo4j:${NEO4J_VERSION-5.25.1}
     ports:
       - 7687:7687
       - 7474:7474
@@ -75,38 +62,115 @@ services:
       - NEO4J_PLUGINS=["apoc"]
       - NEO4J_db_tx__log_rotation_retention__policy=false
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=${NEO4J_LICENSE-eval}
     healthcheck:
         test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
         interval: 15s
         timeout: 30s
         retries: 10
+    depends_on:
+      database-seeding:
+        condition: service_completed_successfully
     networks:
       - net
 
   database-seeding:
     user: "${UID}:${GID}"
-    image: neo4j/neo4j-admin:${NEO4J_VERSION-5.21.2}-enterprise
+    image: neo4j/neo4j-admin:${NEO4J_VERSION-5.21.2}
     volumes:
       - $PWD/data:/data
       - $PWD/backups:/backups
       - $PWD/seed-databases.sh:/seed-databases.sh
     environment:
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=${NEO4J_LICENSE-eval}
       - NEO4J_ADDRESS=neo4j://database
       - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
     command: /seed-databases.sh
-    depends_on:
-      database:
-        condition: service_healthy
     networks:
       - net
 
+  loader: &loader
+    build:
+      context: ./build-context/
+      dockerfile: Dockerfile
+    volumes:
+      - $PWD/embedding_model:/embedding_model
+    environment: &environment
+      NEO4J_URI: ${NEO4J_URI-neo4j://database:7687}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD-password}
+      NEO4J_USERNAME: ${NEO4J_USERNAME-neo4j}
+      NEO4J_DATABASE: ${NEO4J_DATABASE-neo4j}
+      OPENAI_API_KEY: ${OPENAI_API_KEY-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL-http://host.docker.internal:11434}
+      LLM: ${LLM-llama2}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL-sentence_transformer}
+      LANGCHAIN_ENDPOINT: ${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
+      LANGCHAIN_TRACING_V2: ${LANGCHAIN_TRACING_V2-false}
+      LANGCHAIN_PROJECT: ${LANGCHAIN_PROJECT-}
+      LANGCHAIN_API_KEY: ${LANGCHAIN_API_KEY-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION-}
+      STREAMLIT_FILE: loader.py
+      PREPARATION_QUERY: |
+        MATCH (r:Regesta) 
+        CALL {
+          WITH r
+          SET r.concatText = apoc.text.join([x in [r.archivalHistory, r.commentary, r.summary] where x is not null], ' ')
+        } IN CONCURRENT TRANSACTIONS
+      LABEL: Regesta
+      PROPERTY_IDENTIFIER: uid
+      PROPERTY_TEXT: concatText
+      PROPERTY_EMBEDDING: embedding
+      PROMPT_CONTEXT: den Regesta Imperii
+      RETRIEVAL_QUERY: |
+        MATCH (node)
+        WITH node, score, 
+          COLLECT { MATCH (node)-[:EXTERNAL_SOURCE|REFERENCES]->(ref) RETURN apoc.text.join([x IN [ref.shortTitle, ref.url] WHERE x IS NOT NULL], ' ') } AS refs, 
+          COLLECT { MATCH (node)-[:PLACE_OF_ISSUE]->(p:Place) RETURN apoc.text.join([x IN [p.latLong, p.normalizedGerman, p.wikidataId] WHERE x IS NOT NULL], ' ') } AS places 
+        RETURN '### Orte:\n' + apoc.text.join(places, '\n') +'### Referenzen:\n' + apoc.text.join(refs, '\n') + '\n###Text: ' + node.concatText AS text,
+            score,
+            { source:  coalesce(node.url, 'n/a') } AS metadata  
+        ORDER BY score ASC
+    ports:
+      - 8602:8080
+    networks:
+    - net
+    depends_on:
+      database:
+        condition: service_healthy
+      database-seeding:
+        condition: service_completed_successfully
+    develop:
+      watch:
+      - action: rebuild
+        path: .
+        ignore:
+        - pdf_bot.py
+        - front-end/
+
+  bot:
+    <<: *loader
+    environment: 
+      <<: *environment
+      STREAMLIT_FILE: bot.py
+    ports:
+      - 8601:8080
+
+  api:
+    <<: *loader
+    # environment:
+    #   <<: *environment
+    # volumes:
+    #   - $PWD/embedding_model:/embedding_model
+    entrypoint:  [ "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8080" ]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - 8604:8080
+
 networks:
   net:   
-
-include:
-  - docker-compose-sozinianer.yml
-  - docker-compose-regestaimperii.yml
- 
