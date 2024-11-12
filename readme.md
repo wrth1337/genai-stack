@@ -42,7 +42,8 @@ In case you're using OLLAMA install it directly on the machine.
 ### configuration files
 
 Once the GPU dependent part is done, copy `env.example` to `.env` and configure it to your needs.
-It's important to set the uid/gid to the user running the Docker commands.
+It's important to set the uid/gid to the user running the Docker commands. 
+You might want to use the `id` command to figure out your uid/gid.
 The first two settings `LLM` and `EMBEDDING_MODEL` should be set according to your needs.
 `NEO4J_PASSWORD` should be set to a reasonable password.
 Note that the password is only applied if the `data` folder is empty.
