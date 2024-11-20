@@ -116,7 +116,7 @@ services:
         MATCH (r:Regesta) 
         CALL {
           WITH r
-          SET r.concatText = apoc.text.join([x in [r.archivalHistory, r.commentary, r.summary] where x is not null], ' ')
+          SET r.concatText = apoc.text.join([x in [r.summary, r.commentary, r.archivalHistory] where x is not null], ' ')
         } IN CONCURRENT TRANSACTIONS
       LABEL: Regesta
       PROPERTY_IDENTIFIER: uid
@@ -124,11 +124,13 @@ services:
       PROPERTY_EMBEDDING: embedding
       PROMPT_CONTEXT: den Regesta Imperii
       RETRIEVAL_QUERY: |
-        MATCH (node)
         WITH node, score, 
           COLLECT { MATCH (node)-[:EXTERNAL_SOURCE|REFERENCES]->(ref) RETURN apoc.text.join([x IN [ref.shortTitle, ref.url] WHERE x IS NOT NULL], ' ') } AS refs, 
-          COLLECT { MATCH (node)-[:PLACE_OF_ISSUE]->(p:Place) RETURN apoc.text.join([x IN [p.latLong, p.normalizedGerman, p.wikidataId] WHERE x IS NOT NULL], ' ') } AS places 
-        RETURN '### Orte:\n' + apoc.text.join(places, '\n') +'### Referenzen:\n' + apoc.text.join(refs, '\n') + '\n###Text: ' + node.concatText AS text,
+          COLLECT { MATCH (node)-[:PLACE_OF_ISSUE]->(p:Place) RETURN apoc.text.join([x IN [p.latLong, p.normalizedGerman, p.wikidataId] WHERE x IS NOT NULL], ' ') } AS placesOfIssue,
+          COLLECT { MATCH (node)<-[:APPEARS_IN]->(ref) RETURN apoc.text.join([x IN [ref.type, ref.label] WHERE x IS NOT NULL], ' ') } AS appearsIn
+        RETURN '### Text:\n' + node.concatText + '\n' +
+               '### Orte:\n' + apoc.text.join(placesOfIssue, '\n') +
+               '### Referenzen:\n' + apoc.text.join(refs, '\n') + apoc.text.join(appearsIn, '\n') as text,           
             score,
             { source:  coalesce(node.url, 'n/a') } AS metadata  
         ORDER BY score ASC
