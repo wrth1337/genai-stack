@@ -6,6 +6,6 @@ cookie:
 credentials:
   usernames:
     genai:
-      password: 123 # Will be hashed automatically
+      password: "123" # Will be hashed automatically
       name: Genai Stack User
       email: n/a
