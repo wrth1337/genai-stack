@@ -50,7 +50,7 @@ Note that the password is only applied if the `data` folder is empty.
 You cannot change the database password by simply changing it in `.env`.
 Instead follow the procedure from [Recover admin user and password](https://neo4j.com/docs/operations-manual/current/authentication-authorization/password-and-user-recovery/).
 
-For authentication of the `loader` container copy `build-context/auth.yaml.example` to `build-context/auth.yml` and apply your changes - esp. change the password.
+For authentication of the `loader` container copy `build-context/auth.yaml.example` to `build-context/auth.yaml` and apply your changes - esp. change the password.
 
 ### download database dump
 
