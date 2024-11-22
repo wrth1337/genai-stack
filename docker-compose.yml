@@ -7,6 +7,7 @@ services:
       - net
     volumes:
       - $PWD/ollama:/root/.ollama
+      - $PWD/ollama_entrypoint.sh:/entrypoint.sh
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     environment:
       - LLM=${LLM-llama3.1}
