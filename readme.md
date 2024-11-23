@@ -36,8 +36,8 @@ Depending on your GPU you might need to tweak `HSA_OVERRIDE_GFX_VERSION`.
 
 #### On a Mac computer
 
-In case you're using OLLAMA install it directly on the machine.
-(Details to be followed)
+In case you're using OLLAMA install it directly on the machine. 
+Download the model with `ollama pull llama3.2` and start OLLAMA with `ollama serve`.
 
 ### configuration files
 
