@@ -146,12 +146,15 @@ services:
         condition: service_completed_successfully
     develop:
       watch:
-      - action: rebuild
-        path: .
+      - action: sync
+        path: build-context/
         ignore:
         - pdf_bot.py
         - front-end/
-
+        target: /
+      - action: sync+restart
+        path: build-context/poetry.lock
+        target: /
   bot:
     <<: *loader
     environment: 
