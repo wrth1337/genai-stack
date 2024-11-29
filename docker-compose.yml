@@ -52,17 +52,20 @@ services:
 
   database:
     user: "${UID}:${GID}"
-    image: neo4j:${NEO4J_VERSION-5.25.1}
+    image: neo4j:${NEO4J_VERSION-5.25.1}-enterprise
     ports:
       - 7687:7687
       - 7474:7474
     volumes:
       - $PWD/data:/data
+      - $PWD/logs:/logs
     environment:
       - NEO4J_AUTH=${NEO4J_USERNAME-neo4j}/${NEO4J_PASSWORD-password}
       - NEO4J_PLUGINS=["apoc"]
       - NEO4J_db_tx__log_rotation_retention__policy=false
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+      - NEO4J_db_logs_query_enabled=INFO
     healthcheck:
         test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
         interval: 15s
@@ -137,6 +140,7 @@ services:
         ORDER BY score ASC
     ports:
       - 8602:8080
+      - 5678:5678
     networks:
     - net
     depends_on:
@@ -152,7 +156,7 @@ services:
         - pdf_bot.py
         - front-end/
         target: /
-      - action: sync+restart
+      - action: rebuild
         path: build-context/poetry.lock
         target: /
   bot:

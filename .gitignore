@@ -1,6 +1,8 @@
 .*
 data/**
 !data/.ignore
+logs/**
+!logs/.ignore
 backups/*.dump
 embedding_model/*
 !embedding_model/.ignore
