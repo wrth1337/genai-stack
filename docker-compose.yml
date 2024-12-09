@@ -155,6 +155,7 @@ services:
         ignore:
         - pdf_bot.py
         - front-end/
+        - front-end2/
         target: /
       - action: rebuild
         path: build-context/poetry.lock
@@ -202,6 +203,27 @@ services:
       - net
     ports:
       - 8505:8505
+
+  front-end2:
+    build:
+      context: .
+      dockerfile: front-end2.Dockerfile
+    x-develop:
+      watch:
+        - action: sync
+          path: ./front-end2
+          target: /app
+          ignore:
+            - ./front-end2/node_modules/
+        - action: rebuild
+          path: ./front-end2/package.json
+    depends_on:
+        api:
+          condition: service_healthy
+    networks:
+      - net
+    ports:
+      - 8506:8506
 
       
 networks:
