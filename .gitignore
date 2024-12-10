@@ -9,3 +9,4 @@ embedding_model/*
 .DS_Store
 ollama/
 build-context/auth.yaml
+package-lock.json
