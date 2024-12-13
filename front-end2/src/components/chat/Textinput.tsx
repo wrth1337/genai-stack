@@ -1,11 +1,13 @@
 import { ChangeEvent, useState } from "react";
+import { ChatStates } from "../../types";
 
 type TextinputProps = {
     className?: string;
     onSendInput: any;
+    chatState: ChatStates;
 }
 
-export function Textinput({ className, onSendInput }: TextinputProps) {
+export function Textinput({ className, onSendInput, chatState }: TextinputProps) {
     const [question, setQuestion] = useState<string>("");
     const [useRag, setuseRag] = useState<boolean>(false);
 
@@ -31,7 +33,7 @@ export function Textinput({ className, onSendInput }: TextinputProps) {
 
                 <input
                     placeholder="What coding related question can I help you with?"
-                    disabled={false}
+                    disabled={chatState == ChatStates.RECEIVING}
                     className="w-100"
                     value={question}
                     onChange={handleChange}
