@@ -54,6 +54,22 @@ rag_chain = configure_qa_rag_chain(
     llm, embeddings, embeddings_store_url=url, username=username, password=password, database=database
 )
 
+class newCallBack(BaseCallbackHandler):
+    """Test Callback Handler"""
+    promt = ""
+    metaData = {}
+    def on_llm_start(
+        self, serialized: dict[str, any], prompts: list[str], **kwargs: any
+    ) -> any:
+        """Run when LLM starts running."""
+        print("########################################################")
+        print("LLM started running")
+        print(prompts)
+        print("+++++++++++++++++++++++++++")
+        print(serialized)
+        self.promt = prompts[0]
+        self.metaData = kwargs["metadata"]
+        print(kwargs)
 
 class QueueCallback(BaseCallbackHandler):
     """Callback handler for streaming LLM responses to a queue."""
@@ -145,11 +161,12 @@ async def ask(question: Question = Depends()):
     output_function = llm_chain
     if question.rag:
         output_function = rag_chain
+    callback = newCallBack()
     result = output_function(
-        {"question": question.text, "chat_history": []}, callbacks=[]
+        {"question": question.text, "chat_history": []}, callbacks=[callback]
     )
 
-    return {"result": result["answer"], "model": llm_name}
+    return {"result": result["answer"], "model": llm_name, "promt":callback.promt, "meta":callback.metaData}
 
 
 # @app.get("/generate-ticket")
