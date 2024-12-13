@@ -56,7 +56,7 @@ rag_chain = configure_qa_rag_chain(
 
 class newCallBack(BaseCallbackHandler):
     """Test Callback Handler"""
-    promt = ""
+    prompt = ""
     metaData = {}
     def on_llm_start(
         self, serialized: dict[str, any], prompts: list[str], **kwargs: any
@@ -67,9 +67,19 @@ class newCallBack(BaseCallbackHandler):
         print(prompts)
         print("+++++++++++++++++++++++++++")
         print(serialized)
-        self.promt = prompts[0]
+        self.prompt = prompts[0]
         self.metaData = kwargs["metadata"]
         print(kwargs)
+
+    def on_llm_end(self, *args, **kwargs) -> None:
+        print("########################################################")
+        print("ON LLM END")
+        print(kwargs)
+        print(args)
+
+    def on_retriever_end(self, documents, *, run_id, parent_run_id = None, **kwargs) -> any:
+        print("======================RETRIEVE=========================")
+        print(documents)
 
 class QueueCallback(BaseCallbackHandler):
     """Callback handler for streaming LLM responses to a queue."""
@@ -166,7 +176,7 @@ async def ask(question: Question = Depends()):
         {"question": question.text, "chat_history": []}, callbacks=[callback]
     )
 
-    return {"result": result["answer"], "model": llm_name, "promt":callback.promt, "meta":callback.metaData}
+    return {"result": result["answer"], "model": llm_name, "prompt":callback.prompt, "meta":callback.metaData}
 
 
 # @app.get("/generate-ticket")
