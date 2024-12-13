@@ -10,6 +10,7 @@ export type Answer = {
 export type Metadata = {
     temperature: string;
     systemPrompt: string;
+    modelName: string;
 }
 
 export type MessageType = {
