@@ -30,7 +30,7 @@ function App() {
 					const data: any = await response.json();
 					console.log(data.result);
 					setMessages(messages=> [...messages, {text: data.result, me: false}]);
-					setMeta({systemPrompt: data.promt, temperature: data.meta.ls_temperature, modelName: data.meta.ls_model_name })
+					setMeta({systemPrompt: data.prompt, temperature: data.meta.ls_temperature, modelName: data.meta.ls_model_name })
 
 				} else if (response.status !== 204) {
 					console.error("Failed to ask Bot:", response.statusText);

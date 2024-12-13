@@ -13,7 +13,7 @@ export function Meta({ className, metadata }: MetaProps) {
 			<p>Model: {metadata?.modelName}</p>
 
 			<br/>
-			<h5>Promt:</h5>
+			<h5>Prompt:</h5>
 			<p>{metadata?.systemPrompt}</p>
 		</div>
 	)
